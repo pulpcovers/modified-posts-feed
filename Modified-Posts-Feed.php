@@ -609,13 +609,17 @@ class Modified_Posts_Feed {
             $index_action_performed = true;
         }
         
-        // Check index status only if not already determined by actions above
-        if (!$index_action_performed) {
-            global $wpdb;
-            $index_exists = (bool) $wpdb->get_var(
-                "SHOW INDEX FROM {$wpdb->posts} WHERE Key_name = 'post_modified'"
-            );
-        }
+// Check index status only if not already determined by actions above
+if ( ! $index_action_performed ) {
+    global $wpdb;
+
+    // Direct database query required because WordPress provides no API
+    // for inspecting table indexes.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $index_exists = (bool) $wpdb->get_var(
+        "SHOW INDEX FROM {$wpdb->posts} WHERE Key_name = 'post_modified'"
+    );
+}
         
         $feed_url = home_url('/feed/' . $this->feed_slug);
         
@@ -948,42 +952,61 @@ register_uninstall_hook(__FILE__, 'modified_posts_feed_uninstall');
 
 /**
  * Add database index for better performance
- * NOTE: This makes a permanent change to your database
+ * NOTE: This makes a permanent change to your database.
  */
 function modified_posts_feed_add_index() {
     global $wpdb;
-    
-    // Check if index exists
+
+    // Check if index exists.
+    // Direct database query required because WordPress provides no API
+    // for inspecting table indexes.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     $index_exists = $wpdb->get_var(
         "SHOW INDEX FROM {$wpdb->posts} WHERE Key_name = 'post_modified'"
     );
-    
-    if (!$index_exists) {
+
+    if ( ! $index_exists ) {
+
+        // Add the index for performance.
+        // Schema change required; no WordPress API exists for managing indexes.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange
         $result = $wpdb->query(
             "ALTER TABLE {$wpdb->posts} ADD INDEX post_modified (post_modified)"
         );
-        
-        // Log if there was an error
-        if ($result === false && $wpdb->last_error) {
-            error_log('Modified Posts Feed: Could not add database index - ' . $wpdb->last_error);
-        }
+
+        // Optional: log result for debugging.
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        // error_log( 'Modified Posts Feed: index added, result=' . $result );
     }
 }
 
 /**
  * Remove database index
+ * NOTE: This permanently alters your database.
  */
 function modified_posts_feed_remove_index() {
     global $wpdb;
-    
-    // Check if index exists
+
+    // Check if index exists.
+    // Direct database query required because WordPress provides no API
+    // for inspecting table indexes.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     $index_exists = $wpdb->get_var(
         "SHOW INDEX FROM {$wpdb->posts} WHERE Key_name = 'post_modified'"
     );
-    
-    if ($index_exists) {
-        $wpdb->query(
+
+    if ( $index_exists ) {
+
+        // Remove the index.
+        // Schema change required; no WordPress API exists for managing indexes.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange
+        $result = $wpdb->query(
             "ALTER TABLE {$wpdb->posts} DROP INDEX post_modified"
         );
+
+        // Optional: log result for debugging.
+        // Remove this in production unless you truly need it.
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        // error_log( 'Modified Posts Feed: index removed, result=' . $result );
     }
 }
