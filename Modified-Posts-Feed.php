@@ -970,10 +970,11 @@ function modified_posts_feed_add_index() {
     );
 
     if ( ! $index_exists ) {
-
+    
         // Add the index for performance.
         // Schema change required; no WordPress API exists for managing indexes.
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange
+        // Direct database query required; no caching applies to schema changes.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching
         $result = $wpdb->query(
             "ALTER TABLE {$wpdb->posts} ADD INDEX post_modified (post_modified)"
         );
@@ -995,15 +996,15 @@ function modified_posts_feed_remove_index() {
     // Direct database query required because WordPress provides no API
     // for inspecting table indexes.
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-    $index_exists = $wpdb->get_var(
+        $index_exists = $wpdb->get_var(
         "SHOW INDEX FROM {$wpdb->posts} WHERE Key_name = 'post_modified'"
     );
 
     if ( $index_exists ) {
-
+    
         // Remove the index.
         // Schema change required; no WordPress API exists for managing indexes.
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching
         $result = $wpdb->query(
             "ALTER TABLE {$wpdb->posts} DROP INDEX post_modified"
         );
